@@ -1,0 +1,5 @@
+socket
+os
+sys
+re
+cryptography
