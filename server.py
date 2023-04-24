@@ -49,37 +49,35 @@ def create_encryptor_decryptor(shared_key, iv=None):
 def handle_upload(client_socket, shared_key, filename):
     # Unpad the filename
     print(filename)
-    filename = re.sub(r'[^\x00-\x7F]+', '', filename)
+    filename = re.sub(r'[^\x20-\x7E]+', '', filename)
     print(filename)
     unpadder = padding.PKCS7(128).unpadder()
-    print("here", unpadder)
-    unpadded_filename = unpadder.update(filename.encode("latin-1")) + unpadder.finalize()
-    filename = unpadded_filename.decode("latin-1")
-
-    print(filename)
 
     # Create a file path for the uploaded file
     file_path = os.path.join("uploads", filename)
-
+    print("here 1")
     # Initialize AES cipher with shared_key and a random IV
     aes_cipher = Cipher(algorithms.AES(shared_key), modes.CBC(os.urandom(16)), backend=default_backend())
     decryptor = aes_cipher.decryptor()
-    unpadder = padding.PKCS7(128).unpadder()
-
+    print("here 2")
     # Open the file and write the decrypted data to it
     with open(file_path, "wb") as f:
         while True:
             data = client_socket.recv(1024)
+            print("data:",data)
             if not data:
                 break
             decrypted_data = decryptor.update(data)
+            print("decrypted data:",decrypted_data)
             unpadded_data = unpadder.update(decrypted_data)
+            print("unpadded data:",unpadded_data)
             f.write(unpadded_data)
-        f.write(unpadder.update(decryptor.finalize()))
-    print("Unpadded filename:", unpadded_filename)
-    print("Decoded filename:", filename)
 
+        f.write(unpadder.finalize())
+        
     print(f"File '{filename}' uploaded successfully to the 'uploads' directory.")
+
+
 
 # Download handler function
 def handle_download(client_socket, shared_key, filename):
